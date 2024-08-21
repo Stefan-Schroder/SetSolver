@@ -39,7 +39,6 @@ impl Node {
     }
 
     fn insert_and_return(&mut self, v: u8)-> &mut Node {
-        println!("\ninside {} looking for {}", self.variant, v);
         let mut return_index = 0;
         let mut found = false;
 
@@ -52,14 +51,8 @@ impl Node {
         }
 
         if !found {
-            println!("variant not found adding");
-            let mut n = Node::new(v);
-            self.children.push(n);
+            self.children.push(Node::new(v));
             return_index = self.children.len() - 1;
-        }
-        else
-        {
-            println!("variant found!");
         }
 
         return &mut self.children[return_index];
@@ -72,7 +65,7 @@ impl Node {
             s.pop();
         }
         else {
-            for (i, c) in self.children.iter().enumerate() {
+            for c in self.children.iter() {
                 println!("{}{} --> {}{}{}[{}]", s, self.variant, s, self.variant, c.variant, c.variant);
 
                 s.push((self.variant + '0' as u8) as char);
@@ -80,6 +73,35 @@ impl Node {
                 s.pop();
             }
         }
+    }
+
+    fn solve(&self, parents: Vec<& Node>) {
+        let mut space = [0, 0, 0];
+
+        for parent in parents.iter() {
+            for child in parent.children.iter() {
+                space[child.variant as usize - 1] += 1;
+            }
+        }
+
+        // the 4th one is for a * space
+        let mut explore = [false,false,false,true];
+
+        for (i,x) in space.iter().enumerate() {
+            if space[i] == parents.len() { // all parents have this in their space
+                explore[i] = true;
+            }
+            else {
+                explore[3] = false; // one space is not present so the all space is not possible
+            }
+        }
+
+        for (i,x) in explore.iter().enumerate().rev() {
+        }
+
+        println!("{:?}", space);
+        println!("{:?}", explore);
+
     }
 
 }
@@ -129,6 +151,10 @@ fn main() -> std::io::Result<()> {
     }
 
     head.mermaid_print(&mut "".to_string());
+
+    println!("Solving...");
+    let root_vec: Vec<& Node> = vec![& head];
+    head.solve(root_vec);
 
     Ok(())
 }

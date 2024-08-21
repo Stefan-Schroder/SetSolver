@@ -39,13 +39,9 @@ impl Node {
     }
 
     fn insert_and_return(&mut self, v: u8)-> &mut Node {
-        match &self.children[v as usize]{
-            Some(_s) => {
-            },
-            None => {
-                self.children[v as usize] = Some(Box::new(Node::new(v)));
-            },
-        };
+        if self.children[v as usize].is_none() {
+            self.children[v as usize] = Some(Box::new(Node::new(v)));
+        }
 
         return self.children[v as usize].as_mut().unwrap();
     }

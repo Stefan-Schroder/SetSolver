@@ -81,6 +81,7 @@ impl Node {
             }
         }
     }
+
 }
 
 fn translate(s: &String)->String{
@@ -90,13 +91,13 @@ fn translate(s: &String)->String{
     let number = ["one", "two", "three"];
 
     let mut ret = String::new();
-    ret.push_str(number[s.chars().nth(4).unwrap() as usize - '0' as usize - 1]);
+    ret.push_str(number[s.chars().nth(1).unwrap() as usize - '0' as usize - 1]);
     ret.push_str(" ");
-    ret.push_str(colour[s.chars().nth(1).unwrap() as usize - '0' as usize - 1]);
+    ret.push_str(colour[s.chars().nth(2).unwrap() as usize - '0' as usize - 1]);
     ret.push_str(" ");
     ret.push_str(shade[s.chars().nth(3).unwrap() as usize - '0' as usize - 1]);
     ret.push_str(" ");
-    ret.push_str(shape[s.chars().nth(2).unwrap() as usize - '0' as usize - 1]);
+    ret.push_str(shape[s.chars().nth(4).unwrap() as usize - '0' as usize - 1]);
     
     if s.chars().nth(4).unwrap() as usize - '0' as usize > 1 {
         ret.push_str("s");

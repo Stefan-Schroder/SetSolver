@@ -13,13 +13,20 @@ struct Args {
 }
 
 #[derive(Debug)]
+struct Fork {
+    first: & Node,
+    second: & Node,
+    third: & Node,
+}
+
+#[derive(Debug)]
 struct Node {
     index: Option<String>,
     children: [Option<Box<Node>>; 3],
 }
 
 impl Node {
-    fn new(v: u8)->Self {
+    fn new()->Self {
         Node {
             index: None,
             children: [None, None, None],
@@ -40,7 +47,7 @@ impl Node {
 
     fn insert_and_return(&mut self, v: u8)-> &mut Node {
         if self.children[v as usize].is_none() {
-            self.children[v as usize] = Some(Box::new(Node::new(v)));
+            self.children[v as usize] = Some(Box::new(Node::new()));
         }
 
         return self.children[v as usize].as_mut().unwrap();
@@ -62,34 +69,80 @@ impl Node {
         }
     }
 
-    //fn solve(&self, parents: Vec<& Node>) {
-    //    let mut space = [0, 0, 0];
-    //
-    //    for parent in parents.iter() {
-    //        for child in parent.children.iter() {
-    //            space[child.variant as usize - 1] += 1;
-    //        }
-    //    }
-    //
-    //    // the 4th one is for a * space
-    //    let mut explore = [false,false,false,true];
-    //
-    //    for (i,x) in space.iter().enumerate() {
-    //        if space[i] == parents.len() { // all parents have this in their space
-    //            explore[i] = true;
-    //        }
-    //        else {
-    //            explore[3] = false; // one space is not present so the all space is not possible
-    //        }
-    //    }
-    //
-    //    for (i,x) in explore.iter().enumerate().rev() {
-    //    }
-    //
-    //    println!("{:?}", space);
-    //    println!("{:?}", explore);
-    //
-    //}
+    fn find_forks(&self, fork_list: &mut Vec<Fork>) {
+        let mut at_end = false;
+        let mut has_all = true;
+        for child in self.children.as_ref() {
+            match child {
+                Some(c) => {
+                    if !at_end {
+                        if c.is_end() {
+                            at_end = true;
+                        } else {
+                            c.find_forks(fork_list);
+                        }
+                    }
+                },
+                None => {
+                    has_all = false;
+                },
+            }
+        }
+
+        if has_all {
+            fork_list.push (
+                Fork {
+                    first: self.children[0].as_ref().expect("we checked"),
+                    second: self.children[1].as_ref().expect("we checked"),
+                    third: self.children[2].as_ref().expect("we checked"),
+                }
+            );
+        }
+    }
+
+    fn solve(&self, parents: Vec<& Node>) {
+        /*
+        let mut space = [0, 0, 0];
+
+        for parent in parents.iter() {
+            for (i, child) in parent.children.iter().enumerate() {
+                if child.is_none() {
+                    continue;
+                }
+                space[i] += 1;
+            }
+        }
+
+        // the 4th one is for a * space
+        let mut explore = [false,false,false,true];
+
+        for (i,x) in space.iter().enumerate() {
+            if space[i] == parents.len() { // all parents have this in their space
+                explore[i] = true;
+            }
+            else {
+                explore[3] = false; // one space is not present so the all space is not possible
+            }
+        }
+
+        // I want to explore * first
+        for (i,x) in explore.iter().enumerate().rev() {
+            if !x { // only explore where we have options
+                continue;
+            }
+            if i == 3 {
+                continue;
+            }
+            if parents.children[i].expect("logic error should not explore here").is_end() {
+                println!("{:?}", parents.children[i].expect().index());
+            }
+        }
+
+        println!("{:?}", space);
+        println!("{:?}", explore);
+        */
+
+    }
 
 }
 
@@ -122,7 +175,7 @@ fn main() -> std::io::Result<()> {
 
     let file = BufReader::new(File::open(args.input)?);
 
-    let mut head = Node::new(0);
+    let mut head = Node::new();
 
     for (i, result) in file.lines().enumerate() {
         let line = match result {
@@ -139,9 +192,9 @@ fn main() -> std::io::Result<()> {
 
     head.mermaid_print(&mut "x".to_string());
 
-    //println!("Solving...");
-    //let root_vec: Vec<& Node> = vec![& head];
-    //head.solve(root_vec);
+    println!("Solving...");
+    let root_vec: Vec<& Node> = vec![& head];
+    head.solve(root_vec);
 
     Ok(())
 }

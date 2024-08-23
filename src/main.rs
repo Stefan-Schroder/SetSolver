@@ -15,13 +15,6 @@ struct Args {
 }
 
 #[derive(Debug)]
-struct Fork<'a> {
-    first: &'a Node,
-    second: &'a Node,
-    third: &'a Node,
-}
-
-#[derive(Debug)]
 struct Node {
     index: Option<String>,
     children: [Option<Box<Node>>; 3],
@@ -73,7 +66,7 @@ impl Node {
         }
     }
 
-    fn find_forks<'a>(&'a self, fork_list: &mut VecDeque<Fork<'a>>) {
+    fn find_forks<'a>(&'a self, fork_list: &mut VecDeque<[&'a Node; 3]>) {
         let mut at_end = false;
         let mut has_all = true;
         for child in self.children.as_ref() {
@@ -95,30 +88,36 @@ impl Node {
 
         if has_all {
             fork_list.push_back (
-                Fork {
-                    first: self.children[0].as_ref().expect("we checked"),
-                    second: self.children[1].as_ref().expect("we checked"),
-                    third: self.children[2].as_ref().expect("we checked"),
-                }
+                [
+                    self.children[0].as_ref().expect("we checked"),
+                    self.children[1].as_ref().expect("we checked"),
+                    self.children[2].as_ref().expect("we checked")
+                ]
             );
         }
     }
 
-    fn test_forks<'a>(&'a self, fork_list: &mut VecDeque<Fork<'a>>) {
+    fn test_forks<'a>(&'a self, fork_list: &mut VecDeque<[&'a Node; 3]>) {
         if fork_list.len() == 0 {
             return;
         }
 
-        let mut current_option = &mut fork_list[0];
+        let mut current_option = &mut fork_list.front().expect("Our len check failed");
 
-        if current_option.first.is_end() { // we have hit the end and this is a solution
-            
+        if current_option[0].is_end() { // we have hit the end and this is a solution
+            for (i, card) in current_option.iter().enumerate() {
+                println!("{}. {:?}", i, card.index.as_ref().expect("Logic error in printing options"));
+            }
+            fork_list.pop_front();
+            return; // I think this should be here
         }
+
+        // find options
 
     }
 
     fn solve(&self) {
-        let mut fork_list = VecDeque::<Fork>::new();
+        let mut fork_list = VecDeque::<[& Node; 3]>::new();
         self.find_forks(&mut fork_list);
 
         // Debug print fork

@@ -13,23 +13,25 @@ struct Args {
 }
 
 #[derive(Debug)]
-struct Fork {
-    first: & Node,
-    second: & Node,
-    third: & Node,
+struct Fork<'a> {
+    first: &'a Node,
+    second: &'a Node,
+    third: &'a Node,
 }
 
 #[derive(Debug)]
 struct Node {
     index: Option<String>,
     children: [Option<Box<Node>>; 3],
+    debug_name: String,
 }
 
 impl Node {
-    fn new()->Self {
+    fn new(s : String)->Self {
         Node {
             index: None,
             children: [None, None, None],
+            debug_name: s,
         }
     }
 
@@ -45,9 +47,9 @@ impl Node {
         self.index.is_some()
     }
 
-    fn insert_and_return(&mut self, v: u8)-> &mut Node {
+    fn insert_and_return(&mut self, v: u8, debug_name: String)-> &mut Node {
         if self.children[v as usize].is_none() {
-            self.children[v as usize] = Some(Box::new(Node::new()));
+            self.children[v as usize] = Some(Box::new(Node::new(debug_name)));
         }
 
         return self.children[v as usize].as_mut().unwrap();
@@ -69,7 +71,7 @@ impl Node {
         }
     }
 
-    fn find_forks(&self, fork_list: &mut Vec<Fork>) {
+    fn find_forks<'a>(&'a self, fork_list: &mut Vec<Fork<'a>>) {
         let mut at_end = false;
         let mut has_all = true;
         for child in self.children.as_ref() {
@@ -100,7 +102,30 @@ impl Node {
         }
     }
 
-    fn solve(&self, parents: Vec<& Node>) {
+    fn test_forks<'a>(&'a self, fork_list: &mut Vec<Fork<'a>>) {
+        if fork_list.len() == 0 {
+            return;
+        }
+
+        let mut current_option = &mut fork_list[0];
+
+    }
+
+    fn solve(&self) {
+        let mut fork_list = Vec::<Fork>::new();
+        self.find_forks(&mut fork_list);
+
+        // Debug print fork
+        /*
+        for (i, fork) in fork_list.iter().enumerate() {
+            println!("Fork {}\n{}\n{}\n{}\n", i,
+                fork.first.debug_name,
+                fork.second.debug_name,
+                fork.third.debug_name);
+
+        }
+        */
+
         /*
         let mut space = [0, 0, 0];
 
@@ -175,7 +200,7 @@ fn main() -> std::io::Result<()> {
 
     let file = BufReader::new(File::open(args.input)?);
 
-    let mut head = Node::new();
+    let mut head = Node::new("x".to_string());
 
     for (i, result) in file.lines().enumerate() {
         let line = match result {
@@ -184,17 +209,19 @@ fn main() -> std::io::Result<()> {
         };
 
         let mut current_node: &mut Node = &mut head;
+        let mut current_debug_name = String::new();
         for c in line.chars() {
-            current_node = current_node.insert_and_return(c as u8 - '0' as u8);
+            current_debug_name.push((c as u8 + 1) as char);
+            current_node = current_node.insert_and_return(c as u8 - '0' as u8, current_debug_name.clone());
         }
         current_node.set_index(translate(&line));
     }
 
+    println!("flowchart LR");
     head.mermaid_print(&mut "x".to_string());
 
-    println!("Solving...");
-    let root_vec: Vec<& Node> = vec![& head];
-    head.solve(root_vec);
+    println!("\n============\nSolving...");
+    head.solve();
 
     Ok(())
 }

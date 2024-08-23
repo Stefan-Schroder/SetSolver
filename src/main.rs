@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
+use std::collections::VecDeque;
+
 use clap::Parser;
 
 use std::char;
@@ -71,7 +73,7 @@ impl Node {
         }
     }
 
-    fn find_forks<'a>(&'a self, fork_list: &mut Vec<Fork<'a>>) {
+    fn find_forks<'a>(&'a self, fork_list: &mut VecDeque<Fork<'a>>) {
         let mut at_end = false;
         let mut has_all = true;
         for child in self.children.as_ref() {
@@ -92,7 +94,7 @@ impl Node {
         }
 
         if has_all {
-            fork_list.push (
+            fork_list.push_back (
                 Fork {
                     first: self.children[0].as_ref().expect("we checked"),
                     second: self.children[1].as_ref().expect("we checked"),
@@ -102,17 +104,21 @@ impl Node {
         }
     }
 
-    fn test_forks<'a>(&'a self, fork_list: &mut Vec<Fork<'a>>) {
+    fn test_forks<'a>(&'a self, fork_list: &mut VecDeque<Fork<'a>>) {
         if fork_list.len() == 0 {
             return;
         }
 
         let mut current_option = &mut fork_list[0];
 
+        if current_option.first.is_end() { // we have hit the end and this is a solution
+            
+        }
+
     }
 
     fn solve(&self) {
-        let mut fork_list = Vec::<Fork>::new();
+        let mut fork_list = VecDeque::<Fork>::new();
         self.find_forks(&mut fork_list);
 
         // Debug print fork

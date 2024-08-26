@@ -1,8 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
-use std::collections::VecDeque;
-
 use clap::Parser;
 
 use std::char;
@@ -13,6 +11,19 @@ struct Args {
     #[arg(short, long)]
     input: String,
 }
+
+static POSSIBLE_OPTIONS : &'static [i32] = &[
+    0b100001010,
+    0b100010001,
+    0b010001100,
+    0b010100001,
+    0b001010100,
+    0b001100010,
+    0b100100100,
+    0b010010010,
+    0b001001001
+];
+
 
 #[derive(Debug)]
 struct Node {
@@ -66,7 +77,7 @@ impl Node {
         }
     }
 
-    fn find_forks<'a>(&'a self, fork_list: &mut VecDeque<[&'a Node; 3]>) {
+    fn find_forks<'a>(&'a self, fork_list: &mut Vec<[&'a Node; 3]>) {
         let mut at_end = false;
         let mut has_all = true;
         for child in self.children.as_ref() {
@@ -87,7 +98,7 @@ impl Node {
         }
 
         if has_all {
-            fork_list.push_back (
+            fork_list.push (
                 [
                     self.children[0].as_ref().expect("we checked"),
                     self.children[1].as_ref().expect("we checked"),
@@ -97,81 +108,67 @@ impl Node {
         }
     }
 
-    fn test_forks<'a>(&'a self, fork_list: &mut VecDeque<[&'a Node; 3]>) {
-        if fork_list.len() == 0 {
-            return;
-        }
-
-        let mut current_option = &mut fork_list.front().expect("Our len check failed");
+    fn test_forks<'a>(&'a self, fork_list: &mut Vec<[&'a Node; 3]>) {
+        let current_option = match fork_list.pop() {
+            Some(o) => o,
+            None => return,
+        };
 
         if current_option[0].is_end() { // we have hit the end and this is a solution
             for (i, card) in current_option.iter().enumerate() {
                 println!("{}. {:?}", i, card.index.as_ref().expect("Logic error in printing options"));
             }
-            fork_list.pop_front();
-            return; // I think this should be here
+            println!();
+        }
+        else {
+            // Naive solution (with binary so maybe smart, lol)
+            // convert the parents and children into matrix containing children
+            //                       c1    c2    c3
+            let mut node_matrix = [ None, None, None,  // parent 1
+                                    None, None, None,  // parent 2
+                                    None, None, None]; // parent 3
+            let mut matrix_bin = 0b000_000_000;
+
+            for (i, parent) in current_option.iter().enumerate() {
+                for (j, child) in parent.children.iter().enumerate() {
+                    match child {
+                        Some(c) => {
+                            node_matrix[i*3+j] = Some(c);
+                            matrix_bin |= 1<<(i*3+j);
+                        },
+                        None => {
+                        },
+                    }
+                }
+            }
+            for option in POSSIBLE_OPTIONS.iter() {
+                if matrix_bin & option == *option {
+                    //println!("found {:b} as an option", option);
+                    let mut indexes = Vec::new();
+                    for i in 0..9 {
+                        if option >> i & 1 == 1{
+                            indexes.push(i);
+                        }
+                    }
+
+                    fork_list.push (
+                        [
+                            node_matrix[indexes[0]].expect("node matrix and matrix bin out of sync with numbers"),
+                            node_matrix[indexes[1]].expect("node matrix and matrix bin out of sync with numbers"),
+                            node_matrix[indexes[2]].expect("node matrix and matrix bin out of sync with numbers")
+                        ]
+                    );
+                }
+            }
         }
 
-        // find options
-
+        self.test_forks(fork_list);
     }
 
     fn solve(&self) {
-        let mut fork_list = VecDeque::<[& Node; 3]>::new();
+        let mut fork_list = Vec::<[& Node; 3]>::new();
         self.find_forks(&mut fork_list);
-
-        // Debug print fork
-        /*
-        for (i, fork) in fork_list.iter().enumerate() {
-            println!("Fork {}\n{}\n{}\n{}\n", i,
-                fork.first.debug_name,
-                fork.second.debug_name,
-                fork.third.debug_name);
-
-        }
-        */
-
-        /*
-        let mut space = [0, 0, 0];
-
-        for parent in parents.iter() {
-            for (i, child) in parent.children.iter().enumerate() {
-                if child.is_none() {
-                    continue;
-                }
-                space[i] += 1;
-            }
-        }
-
-        // the 4th one is for a * space
-        let mut explore = [false,false,false,true];
-
-        for (i,x) in space.iter().enumerate() {
-            if space[i] == parents.len() { // all parents have this in their space
-                explore[i] = true;
-            }
-            else {
-                explore[3] = false; // one space is not present so the all space is not possible
-            }
-        }
-
-        // I want to explore * first
-        for (i,x) in explore.iter().enumerate().rev() {
-            if !x { // only explore where we have options
-                continue;
-            }
-            if i == 3 {
-                continue;
-            }
-            if parents.children[i].expect("logic error should not explore here").is_end() {
-                println!("{:?}", parents.children[i].expect().index());
-            }
-        }
-
-        println!("{:?}", space);
-        println!("{:?}", explore);
-        */
-
+        self.test_forks(&mut fork_list);
     }
 
 }
@@ -222,10 +219,9 @@ fn main() -> std::io::Result<()> {
         current_node.set_index(translate(&line));
     }
 
-    println!("flowchart LR");
-    head.mermaid_print(&mut "x".to_string());
+    //println!("flowchart LR");
+    //head.mermaid_print(&mut "x".to_string());
 
-    println!("\n============\nSolving...");
     head.solve();
 
     Ok(())

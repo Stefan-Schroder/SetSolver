@@ -188,7 +188,7 @@ fn translate(s: &String)->String{
     ret.push_str(" ");
     ret.push_str(shape[s.chars().nth(3).unwrap() as usize - '0' as usize]);
     
-    if s.chars().nth(3).unwrap() as usize - '0' as usize > 0 {
+    if s.chars().nth(0).unwrap() as usize - '0' as usize > 0 {
         ret.push_str("s");
     } else { 
         ret.push_str("");
